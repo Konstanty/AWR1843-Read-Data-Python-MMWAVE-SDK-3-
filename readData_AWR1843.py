@@ -1,8 +1,11 @@
 import serial
 import time
 import numpy as np
+import sys
+
+from PyQt6 import QtWidgets, QtGui, QtCore
+from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtGui
 
 # Change the configuration file name
 configFileName = 'AWR1843config.cfg'
@@ -13,8 +16,57 @@ byteBuffer = np.zeros(2**15,dtype = 'uint8')
 byteBufferLength = 0;
 
 
-# ------------------------------------------------------------------
+class MainWindow(QtWidgets.QMainWindow):
 
+    def __init__(self, *args, **kwargs):
+        super(MainWindow, self).__init__(*args, **kwargs)
+
+        self.graphWidget = pg.PlotWidget()
+        self.setCentralWidget(self.graphWidget)
+
+        self.graphWidget.showGrid(x=True, y=True)
+        self.graphWidget.setBackground('w')
+
+        self.data_line = self.graphWidget.plot([], [], pen=None, symbolPen=None,
+                                               symbolSize=10, symbol='o',
+                                               symbolBrush=(200, 10, 10, 50))
+
+        self.detObj = {}
+        self.frameData = {}
+        self.currentIndex = 0
+
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(50)
+        self.timer.timeout.connect(self.update_plot_data)
+        self.timer.start()
+
+    def update_plot_data(self):
+        print("TIMER!", Dataport)
+        try:
+            # Update the data and check if the data is okay
+            dataOk, _, detObj = readAndParseData18xx(Dataport, configParameters)
+
+            if dataOk:
+                # Store the current frame into frameData
+                self.frameData[self.currentIndex] = detObj
+                self.currentIndex += 1
+
+            if dataOk and len(detObj["x"]) > 0:
+                # print(detObj)
+                x = -detObj["x"]
+                y = detObj["y"]
+
+                self.data_line.setData(x, y)
+
+        # Stop the program and close everything if Ctrl + c is pressed
+        except KeyboardInterrupt:
+            CLIport.write(('sensorStop\n').encode())
+            CLIport.close()
+            Dataport.close()
+            self.win.close()
+
+
+# ------------------------------------------------------------------
 # Function to configure the serial ports and send the data from
 # the configuration file to the radar
 def serialConfig(configFileName):
@@ -241,32 +293,8 @@ def readAndParseData18xx(Dataport, configParameters):
 
     return dataOK, frameNumber, detObj
 
-# ------------------------------------------------------------------
-
-# Funtion to update the data and display in the plot
-def update():
-     
-    dataOk = 0
-    global detObj
-    x = []
-    y = []
-      
-    # Read and parse the received data
-    dataOk, frameNumber, detObj = readAndParseData18xx(Dataport, configParameters)
-    
-    if dataOk and len(detObj["x"])>0:
-        #print(detObj)
-        x = -detObj["x"]
-        y = detObj["y"]
-        
-        s.setData(x,y)
-        QtGui.QApplication.processEvents()
-    
-    return dataOk
-
 
 # -------------------------    MAIN   -----------------------------------------  
-
 # Configurate the serial port
 CLIport, Dataport = serialConfig(configFileName)
 
@@ -274,46 +302,26 @@ CLIport, Dataport = serialConfig(configFileName)
 configParameters = parseConfigFile(configFileName)
 
 # START QtAPPfor the plot
-app = QtGui.QApplication([])
+app = QtWidgets.QApplication(sys.argv)
+main = MainWindow()
+main.setWindowTitle('Scatter 2D')
 
-# Set the plot 
-pg.setConfigOption('background','w')
-win = pg.GraphicsLayoutWidget(title="2D scatter plot")
-p = win.addPlot()
-p.setXRange(-0.5,0.5)
-p.setYRange(0,1.5)
-p.setLabel('left',text = 'Y position (m)')
-p.setLabel('bottom', text= 'X position (m)')
-s = p.plot([],[],pen=None,symbol='o')
-win.show()
-   
-# Main loop 
-detObj = {}  
-frameData = {}    
-currentIndex = 0
-while True:
-    try:
-        # Update the data and check if the data is okay
-        dataOk = update()
-        
-        if dataOk:
-            # Store the current frame into frameData
-            frameData[currentIndex] = detObj
-            currentIndex += 1
-        
-        time.sleep(0.05) # Sampling frequency of 30 Hz
-        
-    # Stop the program and close everything if Ctrl + c is pressed
-    except KeyboardInterrupt:
-        CLIport.write(('sensorStop\n').encode())
-        CLIport.close()
-        Dataport.close()
-        win.close()
-        break
-        
-    
+# Set the plot
+main.graphWidget.setBackground('w')
+p = main.graphWidget
+p.setXRange(-1.0, 1.0)
+p.setYRange(0, 3.5)
+p.setLabel('left', text='Y position (m)')
+p.setLabel('bottom', text='X position (m)')
+s = p.plot([], [], pen=None, symbol='o')
+main.show()
 
+# Main loop
+status = app.exec()
 
-
-
+# Make sure radar is turned off
+CLIport.write(('sensorStop\n').encode())
+CLIport.close()
+Dataport.close()
+sys.exit(status)
 
