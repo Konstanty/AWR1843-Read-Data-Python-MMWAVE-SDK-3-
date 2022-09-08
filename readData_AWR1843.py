@@ -168,7 +168,7 @@ def readAndParseData18xx(Dataport, configParameters):
     detObj = {}
 
     readBuffer = Dataport.read(Dataport.in_waiting)
-    byteVec = np.frombuffer(readBuffer, dtype = 'uint8')
+    byteVec = np.frombuffer(readBuffer, dtype='uint8')
     byteCount = len(byteVec)
 
     # Check that the buffer is not full, and then add the data to the buffer
@@ -223,21 +223,21 @@ def readAndParseData18xx(Dataport, configParameters):
         # Read the header
         magicNumber = byteBuffer[idX:idX+8]
         idX += 8
-        version = format(np.matmul(byteBuffer[idX:idX+4],word),'x')
+        version = format(np.matmul(byteBuffer[idX:idX+4], word), 'x')
         idX += 4
-        totalPacketLen = np.matmul(byteBuffer[idX:idX+4],word)
+        totalPacketLen = np.matmul(byteBuffer[idX:idX+4], word)
         idX += 4
-        platform = format(np.matmul(byteBuffer[idX:idX+4],word),'x')
+        platform = format(np.matmul(byteBuffer[idX:idX+4], word), 'x')
         idX += 4
-        frameNumber = np.matmul(byteBuffer[idX:idX+4],word)
+        frameNumber = np.matmul(byteBuffer[idX:idX+4], word)
         idX += 4
-        timeCpuCycles = np.matmul(byteBuffer[idX:idX+4],word)
+        timeCpuCycles = np.matmul(byteBuffer[idX:idX+4], word)
         idX += 4
-        numDetectedObj = np.matmul(byteBuffer[idX:idX+4],word)
+        numDetectedObj = np.matmul(byteBuffer[idX:idX+4], word)
         idX += 4
-        numTLVs = np.matmul(byteBuffer[idX:idX+4],word)
+        numTLVs = np.matmul(byteBuffer[idX:idX+4], word)
         idX += 4
-        subFrameNumber = np.matmul(byteBuffer[idX:idX+4],word)
+        subFrameNumber = np.matmul(byteBuffer[idX:idX+4], word)
         idX += 4
 
         # Read the TLV messages
@@ -256,10 +256,10 @@ def readAndParseData18xx(Dataport, configParameters):
             if tlv_type == MMWDEMO_UART_MSG_DETECTED_POINTS:
 
                 # Initialize the arrays
-                x = np.zeros(numDetectedObj,dtype=np.float32)
-                y = np.zeros(numDetectedObj,dtype=np.float32)
-                z = np.zeros(numDetectedObj,dtype=np.float32)
-                velocity = np.zeros(numDetectedObj,dtype=np.float32)
+                x = np.zeros(numDetectedObj, dtype=np.float32)
+                y = np.zeros(numDetectedObj, dtype=np.float32)
+                z = np.zeros(numDetectedObj, dtype=np.float32)
+                velocity = np.zeros(numDetectedObj, dtype=np.float32)
 
                 for objectNum in range(numDetectedObj):
 
@@ -322,4 +322,3 @@ CLIport.write(('sensorStop\n').encode())
 CLIport.close()
 Dataport.close()
 sys.exit(status)
-
