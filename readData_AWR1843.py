@@ -79,10 +79,13 @@ def serialConfig(configFileName):
     # CLIport = serial.Serial('/dev/ttyACM0', 115200)
     # Dataport = serial.Serial('/dev/ttyACM1', 921600)
 
-    
+    # Mac
+    CLIport = serial.Serial('/dev/tty.usbmodemR00610361', 115200)
+    Dataport = serial.Serial('/dev/tty.usbmodemR00610364', 921600)
+
     # Windows
-    CLIport = serial.Serial('COM8', 115200)
-    Dataport = serial.Serial('COM9', 921600)
+    # CLIport = serial.Serial('COM8', 115200)
+    # Dataport = serial.Serial('COM9', 921600)
 
     # Read the configuration file and send it to the board
     config = [line.rstrip('\r\n') for line in open(configFileName)]
